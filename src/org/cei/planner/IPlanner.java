@@ -4,5 +4,5 @@ import javaff.data.GroundProblem;
 import javaff.data.Plan;
 
 public interface IPlanner {
-	public Plan solve(GroundProblem problem);
+	public Plan solve(GroundProblem problem) throws Exception;
 }

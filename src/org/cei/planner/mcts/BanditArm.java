@@ -1,4 +1,4 @@
-package chess.ai.montecarlotreesearch;
+package org.cei.planner.mcts;
 
 public class BanditArm implements Comparable<BanditArm>{
 	

@@ -1,48 +1,53 @@
-package chess.ai.montecarlotreesearch;
+package org.cei.planner.mcts;
 
-import java.util.IdentityHashMap;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
-import chess.ChessGame;
-import chess.ChessResult;
-import chess.ChessTeam;
-import chess.exception.IllegalMoveException;
-import chess.move.Move;
+import javaff.planning.Filter;
+import javaff.planning.NullFilter;
+import javaff.planning.State;
 
 public class MCTSNode implements Comparable<MCTSNode> {
-	
-	private static int NODE_COUNT = 0;
 
-	private ChessGame gameState = null;
+	private static int NODE_COUNT = 0;
+	private static StateValuePolicyEnum stateValuePolicy = StateValuePolicyEnum.WIN_LOSS;
+
+	private State state = null;
 	private MCTSNode parent = null;
-	private Move move = null;
 	private Map<MCTSNode, Boolean> successors = null;
 	private double value = 0.0;
-	private ChessResult result = null;
+	private Filter filter = NullFilter.getInstance();
 
-	public MCTSNode(ChessGame gameState) { // root node constructor
-		this.gameState = gameState.clone();
-		this.result = this.gameState.getResult();
+	private MCTSNode() {
 		NODE_COUNT++;
 	}
 
-	public MCTSNode(ChessGame gameState, MCTSNode parent, Move move) {
-		this(gameState);
-		this.move = move;
+	public MCTSNode(State state) { // root node constructor
+		this();
+		this.state = state;
+	}
+
+	public MCTSNode(State state, MCTSNode parent) {
+		this(state);
 		this.parent = parent;
 	}
 	
+	@Override
+	protected void finalize() {
+		NODE_COUNT--;
+	}
+	
+	public static void setStateValuePolicy(StateValuePolicyEnum stateValuePolicy) {
+		MCTSNode.stateValuePolicy = stateValuePolicy;
+	}
+
 	public static int getNodeCount() {
 		return NODE_COUNT;
 	}
 
 	public MCTSNode getParent() {
 		return parent;
-	}
-
-	public Move getMove() {
-		return move;
 	}
 
 	public void setValue(double value) {
@@ -53,22 +58,8 @@ public class MCTSNode implements Comparable<MCTSNode> {
 		return value;
 	}
 
-	public double getValue(ChessTeam team) {
-		if (result.equals(ChessResult.DRAW)) {
-			return 0;
-		}
-		if (gameState.getMovingTeam() == team) {
-			return -1;
-		}
-		return 1;
-	}
-
-	public ChessGame getGameState() {
-		return gameState;
-	}
-
-	public ChessResult getResult() {
-		return result;
+	public State getState() {
+		return state;
 	}
 
 	public Map<MCTSNode, Boolean> getSuccessors() {
@@ -84,24 +75,17 @@ public class MCTSNode implements Comparable<MCTSNode> {
 		}
 	}
 
-	public void generateSuccessors() {
-		successors = new IdentityHashMap<MCTSNode, Boolean>();
-		List<Move> moves = gameState.getPossibleMoves(gameState.getMovingTeam());
-		for (Move move : moves) {
-			ChessTeam team = gameState.getMovingTeam();
-			try {
-				gameState.applyMove(move);
-			} catch (IllegalMoveException e) {
-				continue;
-			}
-			successors.put(new MCTSNode(gameState, this, move), Boolean.FALSE);
-			gameState.unapplyMove(move);
-			if (team != gameState.getMovingTeam())
-			{
-				throw new RuntimeException("Something went wrong");
-			}
+	private void generateSuccessors() {
+		Set<State> nextStates = state.getNextStates(filter.getActions(state));
+		successors = new HashMap<>();
+		for (State nextState : nextStates) {
+			MCTSNode successor = new MCTSNode(nextState, this);
+			successors.put(successor, Boolean.FALSE);
 		}
-		
+	}
+	
+	public void clearSuccesors() {
+		successors = null;
 	}
 
 	@Override
@@ -112,5 +96,23 @@ public class MCTSNode implements Comparable<MCTSNode> {
 			return 1;
 		}
 		return 0;
+	}
+
+	public boolean isTerminal() {
+		if (state.getActions().isEmpty() || isGoal()) {
+			return true;
+		}
+		return false;
+	}
+
+	public boolean isGoal() {
+		return state.goalReached();
+	}
+
+	public void calculateValue() {
+		if (stateValuePolicy == StateValuePolicyEnum.WIN_LOSS) {
+			value = isGoal() ? 1.0 : 0.0;
+		}
+		
 	}
 }
