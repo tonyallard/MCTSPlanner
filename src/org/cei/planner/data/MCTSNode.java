@@ -1,9 +1,12 @@
-package org.cei.planner.mcts;
+package org.cei.planner.data;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javaff.data.Action;
 import javaff.planning.Filter;
 import javaff.planning.NullFilter;
 import javaff.planning.State;
@@ -61,6 +64,10 @@ public class MCTSNode implements Comparable<MCTSNode> {
 	public State getState() {
 		return state;
 	}
+	
+	public List<Action> getActions() {
+		return new ArrayList<Action>(filter.getActions(state));
+	}
 
 	public Map<MCTSNode, Boolean> getSuccessors() {
 		if (successors == null) {
@@ -109,10 +116,12 @@ public class MCTSNode implements Comparable<MCTSNode> {
 		return state.goalReached();
 	}
 
-	public void calculateValue() {
+	public double calculateValue() {
 		if (stateValuePolicy == StateValuePolicyEnum.WIN_LOSS) {
 			value = isGoal() ? 1.0 : 0.0;
+		} else if (stateValuePolicy == StateValuePolicyEnum.H_VALUE) {
+			value = state.getHValue().doubleValue();
 		}
-		
+		return value;
 	}
 }

@@ -1,4 +1,4 @@
-package org.cei.planner.mcts.util;
+package org.cei.planner.util;
 
 import javaff.data.Condition;
 import javaff.data.UngroundProblem;

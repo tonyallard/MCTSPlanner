@@ -6,8 +6,8 @@ import javaff.data.GroundProblem;
 import javaff.data.UngroundProblem;
 import javaff.parser.PDDL21parser;
 
-import org.cei.planner.mcts.util.GroundProblemUtil;
-import org.cei.planner.mcts.util.UngroundProblemUtil;
+import org.cei.planner.util.GroundProblemUtil;
+import org.cei.planner.util.UngroundProblemUtil;
 import org.junit.Test;
 
 public class TestPDDLParser {
