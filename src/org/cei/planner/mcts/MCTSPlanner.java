@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
@@ -14,15 +13,17 @@ import javaff.data.Plan;
 
 import org.cei.planner.IPlanner;
 import org.cei.planner.data.MCTSNode;
+import org.cei.planner.data.StateValuePolicyEnum;
+import org.cei.planner.executor.ExecutorFactory;
 import org.cei.planner.policy.IPolicy;
-import org.cei.planner.policy.RandomMCPolicy;
+import org.cei.planner.policy.RandomMCRolloutPolicy;
 import org.cei.planner.policy.SoftmaxTreeSearchPolicy;
 
 public class MCTSPlanner implements IPlanner {
 
 	private static final long DEFAULT_RUNNING_TIME = 10 * (long) Math.pow(10, 9); // seconds
 	private static final double DEFAULT_LEARNING_RATE = 0.01;
-	private static ExecutorService EXECUTOR = Executors.newCachedThreadPool();
+	private static ExecutorService EXECUTOR = ExecutorFactory.getExecutor();
 	private static final Logger LOG = Logger.getLogger(MCTSPlanner.class.getName());
 
 	private long runningTime = DEFAULT_RUNNING_TIME;
@@ -48,7 +49,7 @@ public class MCTSPlanner implements IPlanner {
 		int iterationsMCTS = 0;
 		LOG.config("Iteration running time set to " + (this.runningTime * Math.pow(10, -6)) + " ms.");
 		// Initialise root state as current
-		MCTSNode currentNode = new MCTSNode(problem.getSTRIPSInitialState());
+		MCTSNode currentNode = new MCTSNode(problem.getSTRIPSInitialState(), StateValuePolicyEnum.H_VALUE);
 		while (!currentNode.isTerminal()) {
 			MCTSNode nextState = runMCTSIteration(currentNode);
 			currentNode = nextState;
@@ -91,9 +92,8 @@ public class MCTSPlanner implements IPlanner {
 
 	private MCTSNode runRolloutPolicy(MCTSNode node) throws InterruptedException,
 			ExecutionException {
-		ExecutorService executor = Executors.newCachedThreadPool();
-		IPolicy rolloutPolicy = new RandomMCPolicy(node);
-		Future<MCTSNode> terminalState = executor.submit(rolloutPolicy);
+		IPolicy rolloutPolicy = new RandomMCRolloutPolicy(node);
+		Future<MCTSNode> terminalState = EXECUTOR.submit(rolloutPolicy);
 		return terminalState.get();
 	}
 

@@ -7,20 +7,21 @@ import javaff.data.Action;
 import javaff.planning.State;
 
 import org.cei.planner.data.MCTSNode;
+import org.cei.planner.data.StateValuePolicyEnum;
 
-public class RandomMCPolicy implements IPolicy {
+public class RandomMCRolloutPolicy implements IPolicy {
 
 	private static final Random RAND = new Random(System.nanoTime());
+	private static final StateValuePolicyEnum STATE_VALUE_POLICY = StateValuePolicyEnum.WIN_LOSS_STATE;
 	
 	private MCTSNode initialNode = null; 
 	private Long maxIterations = null;
-	public static long timeSpenth = 0;
 	
-	public RandomMCPolicy(MCTSNode node) {
+	public RandomMCRolloutPolicy(MCTSNode node) {
 		this.initialNode = node;
 	}
 	
-	public RandomMCPolicy(MCTSNode node, Long maxIterations) {
+	public RandomMCRolloutPolicy(MCTSNode node, Long maxIterations) {
 		this(node);
 		this.maxIterations = maxIterations;
 	}
@@ -36,13 +37,11 @@ public class RandomMCPolicy implements IPolicy {
 			List<Action> actions = currentNode.getActions();
 			Action nextAction = actions.get(RAND.nextInt(actions.size()));
 			State nextState = currentNode.getState().apply(nextAction);
-			MCTSNode nextNode = new MCTSNode(nextState, currentNode);
+			MCTSNode nextNode = new MCTSNode(nextState, currentNode, STATE_VALUE_POLICY);
 			currentNode = nextNode;
 			iterations++;
 		}
-		long start = System.nanoTime();
-		currentNode.calculateValue();
-		timeSpenth += System.nanoTime() - start;
+		currentNode.setValue(currentNode.isGoal() ? 1.0 : 0.0);
 		return currentNode;
 	}
 }

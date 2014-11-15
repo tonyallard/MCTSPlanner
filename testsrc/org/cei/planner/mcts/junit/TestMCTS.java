@@ -16,6 +16,7 @@ import javaff.data.Plan;
 
 import org.cei.planner.IPlanner;
 import org.cei.planner.PDDLPlanner;
+import org.cei.planner.executor.ExecutorFactory;
 import org.cei.planner.mcrw.MCRWPlanner;
 import org.cei.planner.mcts.MCTSPlanner;
 import org.junit.Test;
@@ -28,7 +29,7 @@ public class TestMCTS {
 	private static final String DOMAIN_FILE = "domain.pddl";
 	
 	@Test
-	public void benchmarkMCTS() throws Exception {
+	public void testMCTS() throws Exception {
 		//Divert parser output to file to remove from console
 		PrintStream output = new PrintStream(new File("./output/out.txt"));
 		JavaFF.parsingOutput = output;
@@ -50,7 +51,7 @@ public class TestMCTS {
 					MCTSPlanner.getLog().info("Solving Problem " + problemFile.getName());
 					
 					PDDLPlanner planner = new PDDLPlanner(domainFile, problemFile, mctsPlanner);
-					ExecutorService execService = Executors.newCachedThreadPool();
+					ExecutorService execService = ExecutorFactory.getExecutor();
 					Future<Plan> futurePlan = execService.submit(planner);
 					Plan plan = futurePlan.get();
 					plan.print(System.out);
@@ -61,7 +62,7 @@ public class TestMCTS {
 	}
 	
 	@Test
-	public void benchmarkMCRW() throws Exception {
+	public void testMCRW() throws Exception {
 		//Divert parser output to file to remove from console
 		PrintStream output = new PrintStream(new File("./output/out.txt"));
 		JavaFF.parsingOutput = output;
@@ -83,7 +84,7 @@ public class TestMCTS {
 					MCTSPlanner.getLog().info("Solving Problem " + problemFile.getName());
 					
 					PDDLPlanner planner = new PDDLPlanner(domainFile, problemFile, mctsPlanner);
-					ExecutorService execService = Executors.newCachedThreadPool();
+					ExecutorService execService = ExecutorFactory.getExecutor();
 					Future<Plan> futurePlan = execService.submit(planner);
 					Plan plan = futurePlan.get();
 					plan.print(System.out);
