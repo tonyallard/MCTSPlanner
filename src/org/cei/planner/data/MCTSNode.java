@@ -18,7 +18,8 @@ public class MCTSNode implements Comparable<MCTSNode> {
 	private State state = null;
 	private StateValuePolicyEnum stateValuePolicy = null;
 	private MCTSNode parent = null;
-	private Map<MCTSNode, Boolean> successors = null;
+	private Map<MCTSNode, Integer> successors = null;
+	private Map<MCTSNode, Double> successor_QValues = null;
 	private double value = 0.0;
 	private Filter filter = NullFilter.getInstance();
 	private int visitCount = 0;
@@ -46,6 +47,10 @@ public class MCTSNode implements Comparable<MCTSNode> {
 	
 	public void visited() {
 		visitCount++;
+	}
+
+	public int getVisits() {
+		return visitCount;
 	}
 	
 	public void selected() {
@@ -96,25 +101,35 @@ public class MCTSNode implements Comparable<MCTSNode> {
 		return new ArrayList<Action>(filter.getActions(state));
 	}
 
-	public Map<MCTSNode, Boolean> getSuccessors() {
+	public Map<MCTSNode, Integer> getSuccessors() {
 		if (successors == null) {
 			generateSuccessors();
 		}
 		return successors;
 	}
 
-	public void setExplored(MCTSNode node) {
+	public Map<MCTSNode, Double> getSuccessorQValues() {
+		if (successor_QValues == null) {
+			generateSuccessors();
+		}
+		return successor_QValues;
+	}
+
+	public void visited(MCTSNode node) {
 		if (successors.containsKey(node)) {
-			successors.put(node, Boolean.TRUE);
+			Integer visitCount = successors.get(node) + 1;
+			successors.put(node, visitCount);
 		}
 	}
 
 	private void generateSuccessors() {
 		Set<State> nextStates = state.getNextStates(filter.getActions(state));
 		successors = new HashMap<>();
+		successor_QValues = new HashMap<>();
 		for (State nextState : nextStates) {
 			MCTSNode successor = new MCTSNode(nextState, this, stateValuePolicy);
-			successors.put(successor, Boolean.FALSE);
+			successors.put(successor, Integer.valueOf(0));
+			successor_QValues.put(successor, Double.valueOf(0.0));
 		}
 	}
 	

@@ -13,10 +13,10 @@ public class SoftmaxSelectionHelper {
 	private static final double DEFAULT_TEMPERATURE = 0.01;
 	private static final Random RAND = new Random(System.nanoTime());
 
-	private double temperature = DEFAULT_TEMPERATURE;
+	private double temperature = 0.0;
 
 	public SoftmaxSelectionHelper () {
-		
+		this.temperature = DEFAULT_TEMPERATURE;
 	}
 	
 	public SoftmaxSelectionHelper(double temperature) {

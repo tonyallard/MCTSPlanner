@@ -19,6 +19,7 @@ import org.cei.planner.PDDLPlanner;
 import org.cei.planner.executor.ExecutorFactory;
 import org.cei.planner.mcrw.MCRWPlanner;
 import org.cei.planner.mcts.MCTSPlanner;
+import org.cei.planner.policy.SoftmaxTreeSearchPolicy;
 import org.junit.Test;
 
 public class TestMCTS {
@@ -43,7 +44,7 @@ public class TestMCTS {
 		File dir = new File(DRIVER_LOG_PATH);
 		File[] directoryListing = dir.listFiles();
 		
-		IPlanner mctsPlanner = new MCTSPlanner();
+		IPlanner mctsPlanner = new MCTSPlanner(SoftmaxTreeSearchPolicy.class);
 		
 		if (directoryListing != null) {
 			for (File problemFile : directoryListing) {
@@ -76,7 +77,7 @@ public class TestMCTS {
 		File dir = new File(DRIVER_LOG_PATH);
 		File[] directoryListing = dir.listFiles();
 		
-		IPlanner mctsPlanner = new MCTSPlanner();
+		IPlanner mctsPlanner = new MCTSPlanner(SoftmaxTreeSearchPolicy.class);
 		
 		if (directoryListing != null) {
 			for (File problemFile : directoryListing) {

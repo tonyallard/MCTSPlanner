@@ -19,6 +19,8 @@ import org.cei.planner.mcrw.MCRWPlanner;
 import org.cei.planner.mcts.MCTSPlanner;
 import org.cei.planner.policy.MCDeadlockAvoidance;
 import org.cei.planner.policy.PureRandomWalk;
+import org.cei.planner.policy.SoftmaxTreeSearchPolicy;
+import org.cei.planner.policy.UCTPolicy;
 import org.junit.Test;
 
 public class BenchmarkDriverLog {
@@ -31,7 +33,7 @@ public class BenchmarkDriverLog {
 	private static final int ITERATIONS = 20;
 	
 	@Test
-	public void benchmarkMCTS() throws Exception {
+	public void benchmarkMCTS_UCT() throws Exception {
 		//Divert parser output to file to remove from console
 		PrintStream output = new PrintStream(new File("./output/out.txt"));
 		JavaFF.parsingOutput = output;
@@ -45,7 +47,50 @@ public class BenchmarkDriverLog {
 		File dir = new File(DRIVER_LOG_PATH);
 		File[] directoryListing = dir.listFiles();
 		
-		IPlanner mctsPlanner = new MCTSPlanner();
+		IPlanner mctsPlanner = new MCTSPlanner(UCTPolicy.class);
+		
+		if (directoryListing != null) {
+			for (File problemFile : directoryListing) {
+				if (!problemFile.getName().endsWith(DOMAIN_FILE)) {
+					if (!problemFile.getName().endsWith("00")) {
+						continue;
+					}
+					MCTSPlanner.getLog().info("Solving Problem " + problemFile.getName());
+					ExecutorService execService = ExecutorFactory.getExecutor();
+					long totalTime = 0;
+					int planLength = 0;
+					for (int i = 0; i < ITERATIONS; i++) {
+						long startTime = System.nanoTime();
+						PDDLPlanner planner = new PDDLPlanner(domainFile, problemFile, mctsPlanner);
+						Future<Plan> futurePlan = execService.submit(planner);
+						Plan plan = futurePlan.get();
+						totalTime += System.nanoTime() - startTime;
+						planLength += plan.getActions().size();
+					}
+					double averageTime_ms = (totalTime * Math.pow(10, -6)) / ITERATIONS;
+					double averagePlanLength = planLength / ITERATIONS;
+					System.out.println(problemFile.getName() + ", " + averagePlanLength + ", " + averageTime_ms);
+				}
+			}
+		}
+	}
+	
+	@Test
+	public void benchmarkMCTS_Softmax() throws Exception {
+		//Divert parser output to file to remove from console
+		PrintStream output = new PrintStream(new File("./output/out.txt"));
+		JavaFF.parsingOutput = output;
+		//Setup Logger
+		MCTSPlanner.getLog().setLevel(Level.ALL);
+		FileHandler mctsOutput = new FileHandler("./output/MCTSOutput.txt");
+		mctsOutput.setFormatter(new SimpleFormatter());
+		MCTSPlanner.getLog().addHandler(mctsOutput);
+		
+		File domainFile = new File(DRIVER_LOG_PATH + DOMAIN_FILE);
+		File dir = new File(DRIVER_LOG_PATH);
+		File[] directoryListing = dir.listFiles();
+		
+		IPlanner mctsPlanner = new MCTSPlanner(SoftmaxTreeSearchPolicy.class);
 		
 		if (directoryListing != null) {
 			for (File problemFile : directoryListing) {

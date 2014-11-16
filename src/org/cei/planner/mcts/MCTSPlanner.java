@@ -1,5 +1,6 @@
 package org.cei.planner.mcts;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -17,7 +18,6 @@ import org.cei.planner.data.StateValuePolicyEnum;
 import org.cei.planner.executor.ExecutorFactory;
 import org.cei.planner.policy.IPolicy;
 import org.cei.planner.policy.RandomMCRolloutPolicy;
-import org.cei.planner.policy.SoftmaxTreeSearchPolicy;
 
 public class MCTSPlanner implements IPlanner {
 
@@ -28,12 +28,14 @@ public class MCTSPlanner implements IPlanner {
 
 	private long runningTime = DEFAULT_RUNNING_TIME;
 	private double learningRate = DEFAULT_LEARNING_RATE;
+	private Class<? extends IPolicy> treePolicyClass = null;
 
-	public MCTSPlanner() {
+	public MCTSPlanner(Class<? extends IPolicy> treePolicy) {
+		this.treePolicyClass  = treePolicy;
 	}
 
-	public MCTSPlanner(long runningTime, double learningRate) {
-		this();
+	public MCTSPlanner(Class<? extends IPolicy> treePolicy, long runningTime, double learningRate) {
+		this(treePolicy);
 		this.runningTime = runningTime;
 		this.learningRate = learningRate;
 	}
@@ -43,7 +45,7 @@ public class MCTSPlanner implements IPlanner {
 	}
 
 	@Override
-	public Plan solve(GroundProblem problem) throws InterruptedException,
+	public Plan solve(GroundProblem problem) throws Exception,
 			ExecutionException {
 		long startTime = System.nanoTime();
 		int iterationsMCTS = 0;
@@ -61,7 +63,7 @@ public class MCTSPlanner implements IPlanner {
 	}
 
 	private MCTSNode runMCTSIteration(MCTSNode initialNode)
-			throws InterruptedException, ExecutionException {
+			throws InterruptedException, ExecutionException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
 		long iterationStartTime = System.nanoTime();
 		long runningTime = 0;
 
@@ -69,13 +71,13 @@ public class MCTSPlanner implements IPlanner {
 
 		while (runningTime <= this.runningTime) {
 			MCTSNode newNode = runTreeSearchPolicy(initialNode);
+			newNode.visited();
 			LOG.fine("Tree Policy Completed. " + "Rolling out from node with value: " + newNode.getValue());
 			MCTSNode terminalNode = runRolloutPolicy(newNode);
 			LOG.fine("Rollout Completed. Terminal Node Value: "
 					+ terminalNode.getValue());
 			backup(newNode, terminalNode.getValue());
 			LOG.fine("Backup Completed. " + "New Node Value: " + newNode.getValue());
-			newNode.getParent().setExplored(newNode);
 			runningTime = System.nanoTime() - iterationStartTime;
 			rollouts++;
 		}
@@ -84,8 +86,8 @@ public class MCTSPlanner implements IPlanner {
 		return bestSuccessor(initialNode);
 	}
 
-	private MCTSNode runTreeSearchPolicy(MCTSNode node) throws InterruptedException, ExecutionException {
-		IPolicy searchPolicy = new SoftmaxTreeSearchPolicy(node);
+	private MCTSNode runTreeSearchPolicy(MCTSNode node) throws InterruptedException, ExecutionException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
+		IPolicy searchPolicy = treePolicyClass.getConstructor(MCTSNode.class).newInstance(node);
 		Future<MCTSNode> newNode = EXECUTOR.submit(searchPolicy);
 		return newNode.get();
 	}
